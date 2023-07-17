@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class GameSetting : MonoBehaviour
 {
+    public GameObject floatingTextPrefab;
+    public Transform enemyPivot;
     public int multiplierHealtPlsayer;
     public Sprite[] spritesPlayers;       
     public int multiplierPriceUpPower;

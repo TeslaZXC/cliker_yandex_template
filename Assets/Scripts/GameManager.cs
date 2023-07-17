@@ -1,80 +1,105 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     private int score;
-    private int multiplier;
 
-    private int indexPlayer;
+    private int enemyHealth;
+    private int lastEnemyHeatlh;
 
-    private int playerHealth;
-
-    private int playerIndex = 0;
-    private int power;
+    private int enemyIndex = 0;
+    private int power = 1;
 
     private int price;
 
-    private void Start() {
-        InitPlayer(playerIndex);
-        price = price += GameSetting.Instance.multiplierPriceUpPower;   
+    private void Start()
+    {
+        price += GameSetting.Instance.multiplierPriceUpPower;
         UiManager.Instance.priceText.text = price.ToString();
-        UiManager.Instance.powerText.text = "1";
+
+        InitPlayer();
     }
 
-    public void PlayerClick(){
-        if(multiplier == 0){
-            score++;
-        }
-        else{
-            score = score += multiplier;
-        }
-        if(power == 0){
-            power = 1;
-            playerHealth--;
-        }
-        else{
-            playerHealth = playerHealth -= power;
-        }
-
-        if(playerHealth <= 0){
-            playerIndex++;
-            InitPlayer(playerIndex);
-        }
-
-        UpdatePlayerHealth();
-        UpdateScoreText();
+    private void Update()
+    {
+        UiManager.Instance.healthBar.value = Mathf.Lerp(UiManager.Instance.healthBar.value, enemyHealth, 5f * Time.deltaTime);
     }
 
-    public void UpdateScoreText(){
-        UiManager.Instance.scoreText.text = score.ToString();
+    public void PlayerClick()
+    {
+        score += 10;
+        enemyHealth -= power;
+
+        if(enemyHealth <= 0)
+        {
+            enemyIndex++;
+            
+            //Если индекс врага вышел из длины спрайтов врагов то ставим - 0
+            if (enemyIndex > GameSetting.Instance.spritesPlayers.Length - 1) enemyIndex = 0;
+
+            InitPlayer();
+        }
+
+        Vector2 spawnPosition = GetMousePositionInCanvas();
+        GameObject floatingObject = Instantiate(GameSetting.Instance.floatingTextPrefab, spawnPosition, Quaternion.identity, UiManager.Instance.canvas.transform);
+        floatingObject.GetComponentInChildren<TextMeshProUGUI>().text = $"-{power}";
+
+        UpdateText();
     }
 
-    private void InitPlayer(int index){
-        if(playerHealth == 0){
-            playerHealth = GameSetting.Instance.multiplierHealtPlsayer;
-        }
-        else{
-            playerHealth = playerHealth += GameSetting.Instance.multiplierHealtPlsayer;
-        }
+    private Vector2 GetMousePositionInCanvas()
+    {
+        RectTransform canvasRect = UiManager.Instance.canvas.GetComponent<RectTransform>();
 
-        UpdatePlayerHealth();
+        Vector2 mousePosition = Input.mousePosition;
+        Vector2 canvasPosition;
 
-        UiManager.Instance.playerButton.GetComponent<Image>().sprite = GameSetting.Instance.spritesPlayers[index];
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, mousePosition, null, out canvasPosition);
+
+        return canvasRect.TransformPoint(canvasPosition);
+    }
+
+    private void InitPlayer()
+    {
+        enemyHealth = lastEnemyHeatlh + GameSetting.Instance.multiplierHealtPlsayer;
+        lastEnemyHeatlh = enemyHealth;
+
+        GameSetting.Instance.enemyPivot.transform.localPosition = new Vector2(Random.Range(-1173, 12), -131);
+
+        UpdateText();
+        UiManager.Instance.playerButton.GetComponent<Image>().sprite = GameSetting.Instance.spritesPlayers[enemyIndex];
+        UiManager.Instance.healthBar.maxValue = lastEnemyHeatlh;
+        UiManager.Instance.healthBar.value = lastEnemyHeatlh;
     }
 
     public void UpPower(){;
-        if(score >= price){
-            price = price += GameSetting.Instance.multiplierPriceUpPower;
-            power++;
-            UiManager.Instance.priceText.text = price.ToString();
-            UiManager.Instance.powerText.text = power.ToString();
-        }
+        if (score < price) return;
+
+        score -= price;
+        price += GameSetting.Instance.multiplierPriceUpPower;
+        power++;
+
+        UpdateText();
     }
 
-    public void UpdatePlayerHealth(){
-        UiManager.Instance.healthText.text = playerHealth.ToString();
+    private void UpdateText()
+    {
+        UiManager.Instance.priceText.text = $"Улучшить силу клика за {price}$";
+        UiManager.Instance.powerText.text = $"Сила клика: {power}";
+        UiManager.Instance.scoreText.text = $"{score} $";
+        UiManager.Instance.healthText.text = $"HP: {enemyHealth}";
+
+        if (score >= price)
+        {
+            UiManager.Instance.upPowerButton.GetComponent<Image>().color = new Color32(83, 223, 131, 255);
+        }
+        else
+        {
+            UiManager.Instance.upPowerButton.GetComponent<Image>().color = new Color32(63, 63, 63, 255);
+        }
     }
 }
