@@ -12,12 +12,18 @@ public class UiManager : MonoBehaviour
 
     public Button playerButton;
     public Button upPowerButton;
+    public Button selectBackgroundButton;
+    public Button saveDataButton;
 
     [SerializeField] private UnityEvent playerAction;
     [SerializeField] private UnityEvent upPowerAction;
+    [SerializeField] private UnityEvent selectBackgroundAction;
+    [SerializeField] private UnityEvent saveDataAction;
 
     public TMP_Text healthText;
     public Slider healthBar;
+
+    public Image bacgroundImage;
 
     public static UiManager Instance{get;private set;}
 
@@ -26,5 +32,6 @@ public class UiManager : MonoBehaviour
 
         playerButton.onClick.AddListener(playerAction.Invoke);
         upPowerButton.onClick.AddListener(upPowerAction.Invoke);
+        selectBackgroundButton.onClick.AddListener(selectBackgroundAction.Invoke);
     }
 }
