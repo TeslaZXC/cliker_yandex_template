@@ -5,7 +5,7 @@ using UnityEngine.Events;
 
 public class UiManager : MonoBehaviour
 {
-    public Transform canvas; //AAAAAAAAA —” ¿
+    public Transform canvas;
     public TMP_Text scoreText;
     public TMP_Text powerText;
     public TMP_Text priceText;
@@ -13,12 +13,10 @@ public class UiManager : MonoBehaviour
     public Button playerButton;
     public Button upPowerButton;
     public Button selectBackgroundButton;
-    public Button saveDataButton;
 
     [SerializeField] private UnityEvent playerAction;
     [SerializeField] private UnityEvent upPowerAction;
     [SerializeField] private UnityEvent selectBackgroundAction;
-    [SerializeField] private UnityEvent saveDataAction;
 
     public TMP_Text healthText;
     public Slider healthBar;

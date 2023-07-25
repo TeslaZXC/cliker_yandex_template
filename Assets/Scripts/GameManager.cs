@@ -11,34 +11,31 @@ public class GameManager : MonoBehaviour
 
     private int enemyHealth;
     private int lastEnemyHeatlh;
+    private int enemyIndex;
 
-    private int enemyIndex = 0;
-    private int power = 1;
-
+    private int power;
     private int price;
-    private int totalScore;
 
-    private void OnEnable() => YandexGame.GetDataEvent += GetLoad;
-    private void OnDisable() => YandexGame.GetDataEvent -= GetLoad;
+    private Vector2 enemyPosition;
 
+    private void OnEnable()
+    {
+        YandexGame.GetDataEvent += GetLoad;
+    }
+    private void OnDisable() 
+    {
+        YandexGame.GetDataEvent -= GetLoad;
+    } 
     public static GameManager Instance { get; private set; }
 
     private void Awake()
     {
         Instance = this;
 
-        if (YandexGame.SDKEnabled == true)
+        if (YandexGame.SDKEnabled)
         {
             GetLoad();
-            UpdateText();
         }
-    }
-
-    private void Start()
-    {
-        price += GameSetting.Instance.multiplierPriceUpPower;
-        UiManager.Instance.priceText.text = price.ToString();
-        InitPlayer();
     }
 
     private void Update()
@@ -46,9 +43,26 @@ public class GameManager : MonoBehaviour
         UiManager.Instance.healthBar.value = Mathf.Lerp(UiManager.Instance.healthBar.value, enemyHealth, 5f * Time.deltaTime);
     }
 
+    public void GetLoad()
+    {
+        score = YandexGame.savesData.score;
+        power = YandexGame.savesData.power;
+        enemyIndex = YandexGame.savesData.indexEnemy;
+        BackGroundManager.Instance.indexBackGround = YandexGame.savesData.indexBackGround;
+        UiManager.Instance.bacgroundImage.sprite = GameSetting.Instance.spriteBackgrounds[YandexGame.savesData.indexBackGround];
+
+        price = YandexGame.savesData.price;
+        if (price == 0)
+        {
+            price = GameSetting.Instance.multiplierPriceUpPower;
+        }
+
+        InitPlayer(true);
+        UpdateText();
+    }
+
     public void PlayerClick()
     {
-        totalScore = score + 5 + power;
         score = score + 5 + power;
         enemyHealth -= power;
 
@@ -56,10 +70,8 @@ public class GameManager : MonoBehaviour
         {
             enemyIndex++;
             
-            //Если индекс врага вышел из длины спрайтов врагов то ставим - 0
             if (enemyIndex > GameSetting.Instance.spritesPlayers.Length - 1) enemyIndex = 0;
-
-            InitPlayer();
+            InitPlayer(false);
         }
 
         Vector2 spawnPosition = GetMousePositionInCanvas();
@@ -82,17 +94,45 @@ public class GameManager : MonoBehaviour
         return canvasRect.TransformPoint(canvasPosition);
     }
 
-    private void InitPlayer()
+    private void InitPlayer(bool first)
     {
-        enemyHealth = lastEnemyHeatlh + GameSetting.Instance.multiplierHealtPlsayer;
+        if (first)
+        {
+            enemyHealth = YandexGame.savesData.enemyHealth;
+            if(YandexGame.savesData.enemyHealth == 0)
+            {
+                enemyHealth = GameSetting.Instance.multiplierHealtPlsayer;
+            }
+        }
+        else
+        {
+
+            if (YandexGame.savesData.enemyHealth == 0)
+            {
+                enemyHealth = lastEnemyHeatlh + GameSetting.Instance.multiplierHealtPlsayer;
+            }
+            else
+            {
+                enemyHealth = YandexGame.savesData.enemyHealth + GameSetting.Instance.multiplierHealtPlsayer;
+            }
+        }
+
         lastEnemyHeatlh = enemyHealth;
 
-        GameSetting.Instance.enemyPivot.transform.localPosition = new Vector2(Random.Range(-1173, 12), -131);
-
-        UpdateText();
+        SetRandomPosition();
         UiManager.Instance.playerButton.GetComponent<Image>().sprite = GameSetting.Instance.spritesPlayers[enemyIndex];
         UiManager.Instance.healthBar.maxValue = lastEnemyHeatlh;
         UiManager.Instance.healthBar.value = lastEnemyHeatlh;
+
+        if(!first) SaveData();
+
+        UpdateText();
+    }
+
+    private void SetRandomPosition()
+    {
+        enemyPosition = new Vector2(Random.Range(137, 1428), 803);
+        GameSetting.Instance.enemyPivot.anchoredPosition = enemyPosition;
     }
 
     public void UpPower(){;
@@ -113,7 +153,6 @@ public class GameManager : MonoBehaviour
             UiManager.Instance.powerText.text = $"Сила клика: {power}";
             UiManager.Instance.scoreText.text = $"{score} $";
             UiManager.Instance.healthText.text = $"ХП: {enemyHealth}";
-//
         }
         else if (YandexGame.EnvironmentData.language == "eng")
         {
@@ -133,30 +172,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void GetLoad()
-    {
-        print("score - " + YandexGame.savesData.score);
-        score = YandexGame.savesData.score;
-        power = YandexGame.savesData.power;
-        totalScore = YandexGame.savesData.totalScore;
-        enemyIndex = YandexGame.savesData.indexEnemy;
-        BackGroundManager.Instance.indexBackGround = YandexGame.savesData.indexBackGround;
-        UiManager.Instance.bacgroundImage.sprite = GameSetting.Instance.spriteBackgrounds[YandexGame.savesData.indexBackGround];
-        price = YandexGame.savesData.price;
-        enemyHealth = YandexGame.savesData.enemyHealth;
-
-        if(YandexGame.savesData.enemyHealth == 0)
-        {
-            enemyHealth = GameSetting.Instance.multiplierHealtPlsayer;
-        }
-        else
-        {
-            enemyHealth = YandexGame.savesData.enemyHealth;
-        }
-
-        UpdateText();
-    }
-
     public void ResetSaves()
     {
         YandexGame.ResetSaveProgress();
@@ -164,13 +179,14 @@ public class GameManager : MonoBehaviour
 
     public void SaveData()
     {
+        if (!YandexGame.SDKEnabled) return;
+
         YandexGame.savesData.score = score;
         YandexGame.savesData.power = power;
         YandexGame.savesData.indexEnemy = enemyIndex;
         YandexGame.savesData.indexBackGround = BackGroundManager.Instance.indexBackGround;
         YandexGame.savesData.price = price;
         YandexGame.savesData.enemyHealth = enemyHealth;
-        YandexGame.savesData.totalScore = totalScore;
         YandexGame.SaveProgress();
     }
 }

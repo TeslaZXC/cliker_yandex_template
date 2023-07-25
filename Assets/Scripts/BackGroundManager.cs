@@ -36,7 +36,6 @@ public class BackGroundManager : MonoBehaviour
 
             if(indexBackGround > size)
             {
-                print("big");
                 indexBackGround = 0;
             }
             GameManager.Instance.SaveData();

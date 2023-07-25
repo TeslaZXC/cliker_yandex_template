@@ -7,7 +7,7 @@ using YG;
 public class GameSetting : MonoBehaviour
 {
     public GameObject floatingTextPrefab;
-    public Transform enemyPivot;
+    public RectTransform enemyPivot;
     public int multiplierHealtPlsayer;
     public Sprite[] spritesPlayers;
     public Sprite[] spriteBackgrounds;
